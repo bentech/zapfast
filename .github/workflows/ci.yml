@@ -85,6 +85,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+      # Test the same CRT linkage as releases. An explicit target keeps the
+      # flag off host proc macros and lets the executable check reuse this build.
+      - name: Configure Windows runtime linkage
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          'RUSTFLAGS=-C target-feature=+crt-static' >> $env:GITHUB_ENV
+          'CARGO_BUILD_TARGET=x86_64-pc-windows-msvc' >> $env:GITHUB_ENV
       - name: GUI build dependencies
         if: runner.os == 'Linux'
         run: |
@@ -98,6 +106,13 @@ jobs:
         run: mbx test --locked --all-targets
       - name: Tests (all features)
         run: mbx test --locked --all-targets --all-features
+      - name: Build Windows executable with static runtime
+        if: runner.os == 'Windows'
+        run: mbx build --locked --target x86_64-pc-windows-msvc
+      - name: Check Windows runtime dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./packaging/windows/check-runtime.ps1 -Binary target/x86_64-pc-windows-msvc/debug/zapfast.exe
       - name: Build macOS demo
         if: runner.os == 'macOS'
         run: mbx build --locked --features demo
@@ -144,6 +159,8 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: windows-latest
     timeout-minutes: 40
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -154,6 +171,11 @@ jobs:
         with:
           cache-generation: windows-arm64-v1
       - run: mbx check --locked --all-targets --all-features --target aarch64-pc-windows-msvc
+      - name: Build Windows ARM64 executable with static runtime
+        run: mbx build --locked --target aarch64-pc-windows-msvc
+      - name: Check Windows ARM64 runtime dependencies
+        shell: pwsh
+        run: ./packaging/windows/check-runtime.ps1 -Binary target/aarch64-pc-windows-msvc/debug/zapfast.exe
 
   nix:
     name: Nix package (${{ matrix.system }})

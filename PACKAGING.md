@@ -111,6 +111,24 @@ recipe generation to the Linux packaging job after release assets exist.
 
 ## Windows installer
 
+Windows release builds use `-C target-feature=+crt-static` with an explicit
+`--target`, for x64 and ARM64. The C/C++ runtime is linked into the executable,
+so the ZIP and per-user MSI need no separately installed Visual C++
+Redistributable. Keep the explicit target so host build scripts and proc macros
+do not receive the static-runtime flag. Native dependencies must honor it too.
+`packaging/windows/check-runtime.ps1` checks the actual executable's normal and
+delay-load imports with Visual Studio's `dumpbin` before signing or packaging;
+it rejects versioned Visual C++ runtime DLLs even on runners that have them.
+Run its regression tests with `pwsh packaging/windows/test-runtime-check.ps1`.
+
+Before releasing this change, test the actual ZIP and MSI on clean Windows
+machines of both architectures, without Visual Studio or the Visual C++
+Redistributable. Extract the ZIP and launch it, then install the MSI as a
+standard user and launch its shortcut. Both should reach the linking screen
+without a missing-DLL dialog. Use a graphics driver with OpenGL 2.1 or newer:
+the runtime fix does not provide a graphics driver. CI import checks do not
+replace this clean-machine startup test or inspect DLLs loaded dynamically.
+
 Windows releases ship the portable zip and a per-user Windows Installer
 package, `zapfast-vX.Y.Z-<target>.msi`, built by native-packages from
 `packaging/windows/zapfast.wxs` (`packaging/windows/msi.rb`). Releases up to

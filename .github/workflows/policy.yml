@@ -34,3 +34,7 @@ jobs:
       - name: Policy check regressions
         if: ${{ !cancelled() }}
         run: python3 .github/scripts/test-policy-checks.py
+      - name: Windows runtime checker regressions
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./packaging/windows/test-runtime-check.ps1
