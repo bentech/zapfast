@@ -21,6 +21,8 @@ concurrency:
 
 jobs:
   build:
+    # Publishing the project website requires the upstream Pages configuration.
+    if: github.repository == 'crmne/zapfast'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

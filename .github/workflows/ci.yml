@@ -158,7 +158,9 @@ jobs:
     name: compile (Windows arm64)
     if: github.event_name != 'pull_request'
     runs-on: windows-latest
-    timeout-minutes: 40
+    # The linked static-runtime executable follows the all-target check. A cold
+    # run exhausted 40 minutes while still compiling, before dependency checks.
+    timeout-minutes: 90
     env:
       RUSTFLAGS: -C target-feature=+crt-static
     steps:
